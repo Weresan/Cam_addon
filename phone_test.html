@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera Motion Test - Phone</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        .content {
+            padding: 30px 20px;
+        }
+        
+        .status {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .status.connected {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .controls {
+            display: grid;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .control-group {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+        }
+        
+        .control-group h3 {
+            margin-bottom: 10px;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .slider-container {
+            margin-bottom: 10px;
+        }
+        
+        .slider-container label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+        
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .value-display {
+            font-size: 12px;
+            color: #999;
+            text-align: right;
+        }
+        
+        .buttons {
+            display: grid;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5a6fd8;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        .connection-form {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #333;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
+        .log {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-radius: 5px;
+        }
+        
+        .log-entry.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .log-entry.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .log-entry.info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📱 Camera Motion Test</h1>
+            <p>Control Blender camera from your phone</p>
+        </div>
+        
+        <div class="content">
+            <!-- Connection Status -->
+            <div id="status" class="status disconnected">
+                <strong>Status:</strong> <span id="statusText">Disconnected</span>
+            </div>
+            
+            <!-- Connection Form -->
+            <div class="connection-form">
+                <h3>🔌 Connection Settings</h3>
+                <div class="form-group">
+                    <label for="serverIP">Server IP:</label>
+                    <input type="text" id="serverIP" value="192.168.1.100" placeholder="Enter your computer's IP address">
+                </div>
+                <div class="form-group">
+                    <label for="serverPort">Port:</label>
+                    <input type="number" id="serverPort" value="8765" placeholder="8765">
+                </div>
+                <div class="buttons">
+                    <button id="connectBtn" class="btn btn-primary">Connect</button>
+                    <button id="disconnectBtn" class="btn btn-secondary" disabled>Disconnect</button>
+                </div>
+            </div>
+            
+            <!-- Camera Controls -->
+            <div class="controls">
+                <div class="control-group">
+                    <h3>📍 Position</h3>
+                    <div class="slider-container">
+                        <label for="posX">X Position: <span id="posXValue">0.00</span></label>
+                        <input type="range" id="posX" class="slider" min="-10" max="10" step="0.1" value="0">
+                    </div>
+                    <div class="slider-container">
+                        <label for="posY">Y Position: <span id="posYValue">0.00</span></label>
+                        <input type="range" id="posY" class="slider" min="-10" max="10" step="0.1" value="0">
+                    </div>
+                    <div class="slider-container">
+                        <label for="posZ">Z Position: <span id="posZValue">0.00</span></label>
+                        <input type="range" id="posZ" class="slider" min="-10" max="10" step="0.1" value="0">
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h3>🔄 Rotation (Radians)</h3>
+                    <div class="slider-container">
+                        <label for="rotX">X Rotation: <span id="rotXValue">0.00</span></label>
+                        <input type="range" id="rotX" class="slider" min="-3.14" max="3.14" step="0.1" value="0">
+                    </div>
+                    <div class="slider-container">
+                        <label for="rotY">Y Rotation: <span id="rotYValue">0.00</span></label>
+                        <input type="range" id="rotY" class="slider" min="-3.14" max="3.14" step="0.1" value="0">
+                    </div>
+                    <div class="slider-container">
+                        <label for="rotZ">Z Rotation: <span id="rotZValue">0.00</span></label>
+                        <input type="range" id="rotZ" class="slider" min="-3.14" max="3.14" step="0.1" value="0">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="buttons">
+                <button id="sendBtn" class="btn btn-success" disabled>Send Camera Data</button>
+                <button id="resetBtn" class="btn btn-secondary" disabled>Reset Camera</button>
+                <button id="autoBtn" class="btn btn-primary" disabled>Start Auto Motion</button>
+                <button id="stopAutoBtn" class="btn btn-danger" disabled>Stop Auto Motion</button>
+            </div>
+            
+            <!-- Log -->
+            <div class="log">
+                <h3>📋 Activity Log</h3>
+                <div id="logContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class CameraMotionController {
+            constructor() {
+                this.socket = null;
+                this.connected = false;
+                this.autoInterval = null;
+                this.autoStartTime = 0;
+                
+                this.initializeElements();
+                this.bindEvents();
+                this.updateUI();
+            }
+            
+            initializeElements() {
+                // Connection elements
+                this.statusEl = document.getElementById('status');
+                this.statusTextEl = document.getElementById('statusText');
+                this.serverIPEl = document.getElementById('serverIP');
+                this.serverPortEl = document.getElementById('serverPort');
+                this.connectBtn = document.getElementById('connectBtn');
+                this.disconnectBtn = document.getElementById('disconnectBtn');
+                
+                // Control elements
+                this.posXEl = document.getElementById('posX');
+                this.posYEl = document.getElementById('posY');
+                this.posZEl = document.getElementById('posZ');
+                this.rotXEl = document.getElementById('rotX');
+                this.rotYEl = document.getElementById('rotY');
+                this.rotZEl = document.getElementById('rotZ');
+                
+                // Value displays
+                this.posXValueEl = document.getElementById('posXValue');
+                this.posYValueEl = document.getElementById('posYValue');
+                this.posZValueEl = document.getElementById('posZValue');
+                this.rotXValueEl = document.getElementById('rotXValue');
+                this.rotYValueEl = document.getElementById('rotYValue');
+                this.rotZValueEl = document.getElementById('rotZValue');
+                
+                // Action buttons
+                this.sendBtn = document.getElementById('sendBtn');
+                this.resetBtn = document.getElementById('resetBtn');
+                this.autoBtn = document.getElementById('autoBtn');
+                this.stopAutoBtn = document.getElementById('stopAutoBtn');
+                
+                // Log
+                this.logContainer = document.getElementById('logContainer');
+            }
+            
+            bindEvents() {
+                // Connection events
+                this.connectBtn.addEventListener('click', () => this.connect());
+                this.disconnectBtn.addEventListener('click', () => this.disconnect());
+                
+                // Slider events
+                this.posXEl.addEventListener('input', () => this.updateValueDisplay('posX'));
+                this.posYEl.addEventListener('input', () => this.updateValueDisplay('posY'));
+                this.posZEl.addEventListener('input', () => this.updateValueDisplay('posZ'));
+                this.rotXEl.addEventListener('input', () => this.updateValueDisplay('rotX'));
+                this.rotYEl.addEventListener('input', () => this.updateValueDisplay('rotY'));
+                this.rotZEl.addEventListener('input', () => this.updateValueDisplay('rotZ'));
+                
+                // Action events
+                this.sendBtn.addEventListener('click', () => this.sendCameraData());
+                this.resetBtn.addEventListener('click', () => this.resetCamera());
+                this.autoBtn.addEventListener('click', () => this.startAutoMotion());
+                this.stopAutoBtn.addEventListener('click', () => this.stopAutoMotion());
+            }
+            
+            updateValueDisplay(type) {
+                const element = document.getElementById(type);
+                const valueElement = document.getElementById(type + 'Value');
+                valueElement.textContent = parseFloat(element.value).toFixed(2);
+            }
+            
+            connect() {
+                const ip = this.serverIPEl.value;
+                const port = this.serverPortEl.value;
+                
+                if (!ip || !port) {
+                    this.log('Please enter server IP and port', 'error');
+                    return;
+                }
+                
+                this.log(`Connecting to ${ip}:${port}...`, 'info');
+                
+                try {
+                    // Create WebSocket connection
+                    this.socket = new WebSocket(`ws://${ip}:${port}`);
+                    
+                    this.socket.onopen = () => {
+                        this.connected = true;
+                        this.log('Connected to server!', 'success');
+                        this.updateUI();
+                    };
+                    
+                    this.socket.onclose = () => {
+                        this.connected = false;
+                        this.log('Disconnected from server', 'error');
+                        this.updateUI();
+                    };
+                    
+                    this.socket.onerror = (error) => {
+                        this.log(`Connection error: ${error}`, 'error');
+                        this.connected = false;
+                        this.updateUI();
+                    };
+                    
+                } catch (error) {
+                    this.log(`Failed to connect: ${error}`, 'error');
+                }
+            }
+            
+            disconnect() {
+                if (this.socket) {
+                    this.socket.close();
+                    this.socket = null;
+                }
+                this.connected = false;
+                this.updateUI();
+                this.log('Disconnected', 'info');
+            }
+            
+            sendCameraData() {
+                if (!this.connected) {
+                    this.log('Not connected to server', 'error');
+                    return;
+                }
+                
+                const data = {
+                    X: parseFloat(this.posXEl.value),
+                    Y: parseFloat(this.posYEl.value),
+                    Z: parseFloat(this.posZEl.value),
+                    ROT_X: parseFloat(this.rotXEl.value),
+                    ROT_Y: parseFloat(this.rotYEl.value),
+                    ROT_Z: parseFloat(this.rotZEl.value)
+                };
+                
+                try {
+                    this.socket.send(JSON.stringify(data));
+                    this.log(`Sent: ${JSON.stringify(data)}`, 'success');
+                } catch (error) {
+                    this.log(`Failed to send data: ${error}`, 'error');
+                }
+            }
+            
+            resetCamera() {
+                // Reset all sliders to 0
+                this.posXEl.value = 0;
+                this.posYEl.value = 0;
+                this.posZEl.value = 0;
+                this.rotXEl.value = 0;
+                this.rotYEl.value = 0;
+                this.rotZEl.value = 0;
+                
+                // Update displays
+                this.updateValueDisplay('posX');
+                this.updateValueDisplay('posY');
+                this.updateValueDisplay('posZ');
+                this.updateValueDisplay('rotX');
+                this.updateValueDisplay('rotY');
+                this.updateValueDisplay('rotZ');
+                
+                // Send reset data
+                this.sendCameraData();
+                this.log('Camera reset to origin', 'info');
+            }
+            
+            startAutoMotion() {
+                if (this.autoInterval) {
+                    this.stopAutoMotion();
+                }
+                
+                this.autoStartTime = Date.now();
+                this.autoInterval = setInterval(() => {
+                    const t = (Date.now() - this.autoStartTime) / 1000;
+                    
+                    // Create circular motion
+                    const radius = 5;
+                    const x = radius * Math.cos(t);
+                    const y = radius * Math.sin(t);
+                    const z = 2 + Math.sin(t * 2) * 1;
+                    
+                    // Update sliders
+                    this.posXEl.value = x;
+                    this.posYEl.value = y;
+                    this.posZEl.value = z;
+                    this.rotZEl.value = t;
+                    
+                    // Update displays
+                    this.updateValueDisplay('posX');
+                    this.updateValueDisplay('posY');
+                    this.updateValueDisplay('posZ');
+                    this.updateValueDisplay('rotZ');
+                    
+                    // Send data
+                    this.sendCameraData();
+                }, 100); // 10 FPS
+                
+                this.log('Auto motion started', 'success');
+                this.updateUI();
+            }
+            
+            stopAutoMotion() {
+                if (this.autoInterval) {
+                    clearInterval(this.autoInterval);
+                    this.autoInterval = null;
+                    this.log('Auto motion stopped', 'info');
+                    this.updateUI();
+                }
+            }
+            
+            updateUI() {
+                // Update status
+                if (this.connected) {
+                    this.statusEl.className = 'status connected';
+                    this.statusTextEl.textContent = 'Connected';
+                } else {
+                    this.statusEl.className = 'status disconnected';
+                    this.statusTextEl.textContent = 'Disconnected';
+                }
+                
+                // Update button states
+                this.connectBtn.disabled = this.connected;
+                this.disconnectBtn.disabled = !this.connected;
+                this.sendBtn.disabled = !this.connected;
+                this.resetBtn.disabled = !this.connected;
+                this.autoBtn.disabled = !this.connected || this.autoInterval;
+                this.stopAutoBtn.disabled = !this.autoInterval;
+            }
+            
+            log(message, type = 'info') {
+                const entry = document.createElement('div');
+                entry.className = `log-entry ${type}`;
+                entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+                this.logContainer.appendChild(entry);
+                this.logContainer.scrollTop = this.logContainer.scrollHeight;
+                
+                // Keep only last 50 entries
+                while (this.logContainer.children.length > 50) {
+                    this.logContainer.removeChild(this.logContainer.firstChild);
+                }
+            }
+        }
+        
+        // Initialize the controller when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new CameraMotionController();
+        });
+    </script>
+</body>
+</html>
