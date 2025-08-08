@@ -2,7 +2,7 @@ bl_info = {
     "name": "Camera Motion Receiver",
     "author": "Were Sankofa",
     "version": (1, 0, 0),
-    "blender": (3, 3, 0),
+    "blender": (3, 0, 0),
     "location": "View3D > Sidebar > Camera Motion",
     "description": "Receives camera motion data via WebSocket and applies it to the active camera",
     "warning": "",
@@ -100,17 +100,29 @@ classes = [
 ]
 
 def register():
-    for cls in classes:
-        bpy.utils.register_class(cls)
-    
-    # Start server automatically when add-on is enabled
-    global server_running
-    if not server_running:
-        try:
-            websocket_server.start_server()
-            server_running = True
-        except Exception as e:
-            print(f"Failed to start WebSocket server: {e}")
+    print("🔧 Registering Camera Motion Receiver addon...")
+    try:
+        for cls in classes:
+            bpy.utils.register_class(cls)
+            print(f"✅ Registered class: {cls.__name__}")
+        
+        print("✅ All classes registered successfully!")
+        
+        # Start server automatically when add-on is enabled
+        global server_running
+        if not server_running:
+            try:
+                websocket_server.start_server()
+                server_running = True
+                print("✅ WebSocket server started automatically")
+            except Exception as e:
+                print(f"⚠️ Failed to start WebSocket server: {e}")
+        
+        print("🎉 Camera Motion Receiver addon registration complete!")
+        
+    except Exception as e:
+        print(f"❌ Error during registration: {e}")
+        raise
 
 def unregister():
     # Stop server when add-on is disabled

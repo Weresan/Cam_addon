@@ -263,7 +263,7 @@
                 </div>
                 <div class="form-group">
                     <label for="serverPort">Port:</label>
-                    <input type="number" id="serverPort" value="8765" placeholder="8765">
+                    <input type="number" id="serverPort" value="8000" placeholder="8000">
                 </div>
                 <div class="buttons">
                     <button id="connectBtn" class="btn btn-primary">Connect</button>
@@ -408,14 +408,35 @@
                 this.log(`Connecting to ${ip}:${port}...`, 'info');
                 
                 try {
-                    // Create a simple socket connection using fetch
+                    // Test connection by sending a simple HTTP request
+                    const serverIP = this.serverIPEl.value;
+                    const serverPort = this.serverPortEl.value;
+                    
                     this.log('Testing connection...', 'info');
                     
-                    // For now, just simulate a connection
-                    // The actual data will be sent via HTTP POST
-                    this.connected = true;
-                    this.log('Connected to server!', 'success');
-                    this.updateUI();
+                    // Send a test request to verify connection
+                    fetch(`http://${serverIP}:${serverPort}/send_data`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            X: 0, Y: 0, Z: 0,
+                            ROT_X: 0, ROT_Y: 0, ROT_Z: 0
+                        })
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            this.connected = true;
+                            this.log('Connected to server!', 'success');
+                            this.updateUI();
+                        } else {
+                            this.log(`Server error: ${response.status}`, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        this.log(`Connection failed: ${error}`, 'error');
+                    });
                     
                 } catch (error) {
                     this.log(`Failed to connect: ${error}`, 'error');
@@ -423,10 +444,6 @@
             }
             
             disconnect() {
-                if (this.socket) {
-                    this.socket.close();
-                    this.socket = null;
-                }
                 this.connected = false;
                 this.updateUI();
                 this.log('Disconnected', 'info');

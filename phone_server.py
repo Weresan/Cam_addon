@@ -17,6 +17,25 @@ from pathlib import Path
 from standalone_websocket_server import start_websocket_server, stop_websocket_server
 
 class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
+    def forward_to_blender(self, data):
+        """Forward camera data to Blender's server on port 8765"""
+        try:
+            # Create a socket connection to Blender's server
+            client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            client_socket.settimeout(1.0)  # 1 second timeout
+            client_socket.connect(('localhost', 8765))
+            
+            # Send the JSON data to Blender
+            json_data = json.dumps(data)
+            client_socket.send(json_data.encode('utf-8'))
+            
+            # Close the connection
+            client_socket.close()
+            print(f"✅ Forwarded data to Blender: {data}")
+            
+        except Exception as e:
+            print(f"⚠️  Could not forward to Blender: {e}")
+    
     def do_POST(self):
         """Handle POST requests for camera data"""
         if self.path == '/send_data':
@@ -30,6 +49,9 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 
                 # Print the received data
                 print(f"📱 Received camera data via HTTP: {data}")
+                
+                # Forward the data to Blender's server
+                self.forward_to_blender(data)
                 
                 # Send success response
                 self.send_response(200)
@@ -173,13 +195,14 @@ class PhoneServer:
         
         print(f"\n3️⃣ In the phone app:")
         print(f"   • Enter server IP: {local_ip}")
-        print(f"   • Enter port: 8765")
+        print(f"   • Enter port: 8000")
         print(f"   • Click 'Connect'")
         
         print(f"\n4️⃣ In Blender:")
         print(f"   • Enable the Camera Motion Receiver add-on")
         print(f"   • The WebSocket server should start automatically")
         print(f"   • Or manually start it from the UI panel")
+        print(f"   • Make sure Blender is running and the add-on is enabled!")
         
         print(f"\n5️⃣ Test the connection:")
         print(f"   • Use the sliders to move the camera")
