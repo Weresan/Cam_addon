@@ -1,6 +1,6 @@
 bl_info = {
     "name": "Camera Motion Receiver",
-    "author": "Your Name",
+    "author": "Were Sankofa",
     "version": (1, 0, 0),
     "blender": (3, 3, 0),
     "location": "View3D > Sidebar > Camera Motion",

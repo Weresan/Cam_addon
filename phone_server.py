@@ -10,10 +10,58 @@ import socket
 import threading
 import webbrowser
 import os
+import json
 from pathlib import Path
 
-# Import our WebSocket server
-from websocket_server import start_websocket_server, stop_websocket_server
+# Import our standalone WebSocket server
+from standalone_websocket_server import start_websocket_server, stop_websocket_server
+
+class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
+    def do_POST(self):
+        """Handle POST requests for camera data"""
+        if self.path == '/send_data':
+            try:
+                # Get the content length
+                content_length = int(self.headers['Content-Length'])
+                post_data = self.rfile.read(content_length)
+                
+                # Parse JSON data
+                data = json.loads(post_data.decode('utf-8'))
+                
+                # Print the received data
+                print(f"📱 Received camera data via HTTP: {data}")
+                
+                # Send success response
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
+                self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+                self.end_headers()
+                
+                response = {'status': 'success', 'message': 'Data received'}
+                self.wfile.write(json.dumps(response).encode())
+                
+            except Exception as e:
+                print(f"❌ Error handling POST request: {e}")
+                self.send_response(500)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                
+                response = {'status': 'error', 'message': str(e)}
+                self.wfile.write(json.dumps(response).encode())
+        else:
+            self.send_response(404)
+            self.end_headers()
+    
+    def do_OPTIONS(self):
+        """Handle CORS preflight requests"""
+        self.send_response(200)
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.end_headers()
 
 class PhoneServer:
     def __init__(self, port=8000, websocket_port=8765):
@@ -41,8 +89,11 @@ class PhoneServer:
             script_dir = Path(__file__).parent
             os.chdir(script_dir)
             
-            # Create HTTP server
-            handler = http.server.SimpleHTTPRequestHandler
+            # Update the HTML file with the correct IP address
+            self.update_html_with_ip()
+            
+            # Create HTTP server with custom handler
+            handler = CustomHTTPRequestHandler
             
             with socketserver.TCPServer(("", self.http_port), handler) as httpd:
                 print(f"🌐 HTTP server started on port {self.http_port}")
@@ -58,14 +109,35 @@ class PhoneServer:
         except Exception as e:
             print(f"❌ Failed to start HTTP server: {e}")
     
+    def update_html_with_ip(self):
+        """Update the HTML file with the correct IP address"""
+        try:
+            html_file = Path("phone_test.html")
+            if html_file.exists():
+                # Read the HTML file
+                with open(html_file, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                
+                # Get the local IP address
+                local_ip = self.get_local_ip()
+                
+                # Update the IP address in the HTML
+                updated_content = content.replace('value="192.168.100.59"', f'value="{local_ip}"')
+                
+                # Write the updated content back
+                with open(html_file, 'w', encoding='utf-8') as f:
+                    f.write(updated_content)
+                
+                print(f"✅ Updated phone_test.html with IP address: {local_ip}")
+                
+        except Exception as e:
+            print(f"⚠️  Could not update HTML file: {e}")
+    
     def start_websocket_server(self):
         """Start the WebSocket server for phone connections"""
         try:
-            # Modify the WebSocket server to bind to all interfaces
-            import websocket_server
-            
-            # Start the WebSocket server
-            websocket_server.start_websocket_server()
+            # Start the standalone WebSocket server
+            start_websocket_server()
             self.websocket_running = True
             print(f"🔌 WebSocket server started on port {self.websocket_port}")
             print(f"📡 Accepting connections from any IP address")

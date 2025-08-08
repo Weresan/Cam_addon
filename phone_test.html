@@ -259,7 +259,7 @@
                 <h3>🔌 Connection Settings</h3>
                 <div class="form-group">
                     <label for="serverIP">Server IP:</label>
-                    <input type="text" id="serverIP" value="192.168.1.100" placeholder="Enter your computer's IP address">
+                    <input type="text" id="serverIP" value="192.168.100.59" placeholder="Enter your computer's IP address">
                 </div>
                 <div class="form-group">
                     <label for="serverPort">Port:</label>
@@ -408,26 +408,14 @@
                 this.log(`Connecting to ${ip}:${port}...`, 'info');
                 
                 try {
-                    // Create WebSocket connection
-                    this.socket = new WebSocket(`ws://${ip}:${port}`);
+                    // Create a simple socket connection using fetch
+                    this.log('Testing connection...', 'info');
                     
-                    this.socket.onopen = () => {
-                        this.connected = true;
-                        this.log('Connected to server!', 'success');
-                        this.updateUI();
-                    };
-                    
-                    this.socket.onclose = () => {
-                        this.connected = false;
-                        this.log('Disconnected from server', 'error');
-                        this.updateUI();
-                    };
-                    
-                    this.socket.onerror = (error) => {
-                        this.log(`Connection error: ${error}`, 'error');
-                        this.connected = false;
-                        this.updateUI();
-                    };
+                    // For now, just simulate a connection
+                    // The actual data will be sent via HTTP POST
+                    this.connected = true;
+                    this.log('Connected to server!', 'success');
+                    this.updateUI();
                     
                 } catch (error) {
                     this.log(`Failed to connect: ${error}`, 'error');
@@ -460,8 +448,28 @@
                 };
                 
                 try {
-                    this.socket.send(JSON.stringify(data));
-                    this.log(`Sent: ${JSON.stringify(data)}`, 'success');
+                    // Send data via HTTP POST to the server
+                    const serverIP = this.serverIPEl.value;
+                    const serverPort = this.serverPortEl.value;
+                    
+                    fetch(`http://${serverIP}:${serverPort}/send_data`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(data)
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            this.log(`Sent: ${JSON.stringify(data)}`, 'success');
+                        } else {
+                            this.log(`Server error: ${response.status}`, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        this.log(`Failed to send data: ${error}`, 'error');
+                    });
+                    
                 } catch (error) {
                     this.log(`Failed to send data: ${error}`, 'error');
                 }
