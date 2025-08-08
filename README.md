@@ -201,3 +201,4 @@ For issues or questions:
 2. Review the debug output in Blender's system console
 3. Test with the included test client
 4. Verify your JSON data format matches the requirements
+# Cam_addon
